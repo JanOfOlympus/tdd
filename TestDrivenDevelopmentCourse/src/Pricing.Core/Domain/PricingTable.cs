@@ -22,7 +22,7 @@ public class PricingTable
 
     public IReadOnlyCollection<PriceTier> Tiers { get; }
 
-    public decimal GetMaxDailyPrice()
+	public decimal CalculatePerHour()
     {
         if (_maxDailyPrice.HasValue)
             return _maxDailyPrice.Value;
@@ -30,7 +30,34 @@ public class PricingTable
         return CalculateMaxDailyPriceFromTiers();
     }
 
-    private decimal CalculateMaxDailyPriceFromTiers()
+	public decimal CalculateTotalPriceByHours(int hour)
+	{
+        decimal total = 0;
+		int hoursIncluded = 0;
+
+        foreach (var tier in Tiers)
+        {
+            if (hoursIncluded < hour)
+            {
+                int hourToCalc = 0;
+                if(tier.HourLimit <= hour)
+                {
+                    hourToCalc = tier.HourLimit;
+				}
+                else
+                {
+                    hourToCalc = hour;
+				}
+				total = total + (tier.Price * hourToCalc);
+                hoursIncluded = hoursIncluded + hourToCalc;
+				hour = hour - hoursIncluded;
+			}
+        }
+
+        return total;
+	}
+
+	private decimal CalculateMaxDailyPriceFromTiers()
     {
         decimal total = 0;
         var hoursIncluded = 0;

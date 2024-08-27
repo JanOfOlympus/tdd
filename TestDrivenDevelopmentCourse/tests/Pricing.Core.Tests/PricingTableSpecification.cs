@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Pricing.Core.Domain;
+using System.Xml.Serialization;
 
 namespace Pricing.Core.Tests;
 
@@ -57,7 +58,7 @@ public class PricingTableSpecification
             CreatePriceTier(hourLimit: 24, price: price2)
         }, maxDailyPrice: null);
 
-        pricingTable.GetMaxDailyPrice().Should().Be(maxPrice);
+        pricingTable.CalculatePerHour().Should().Be(maxPrice);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class PricingTableSpecification
             }, maxDailyPrice: maxDailyPrice
         );
 
-        pricingTable.GetMaxDailyPrice()
+        pricingTable.CalculatePerHour()
             .Should().Be(maxDailyPrice);
     }
 
@@ -97,6 +98,24 @@ public class PricingTableSpecification
         create.Should().Throw<ArgumentException>();
     }
 
+    [Theory]
+    [InlineData(10, 19)]
+    [InlineData(15, 29)]
+	public void Price_should_be_calculated_per_hour(int hour, decimal expected)
+    {
+        var priceTable = new PricingTable(new[]
+        {
+            CreatePriceTier(hourLimit: 1, price: 1),
+            CreatePriceTier(hourLimit: 24, price: 2),
+        });
+
+        var result = priceTable.CalculateTotalPriceByHours(hour);
+
+        result.Should().BeGreaterThanOrEqualTo(0);
+        result.Should().Be(expected);
+    }
+
     private static PriceTier CreatePriceTier(int hourLimit = 24, decimal price = 1)
         => new(hourLimit, price);
+
 }
